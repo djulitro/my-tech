@@ -12,12 +12,16 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CartWidget from './CartWidget';
+import { useNavigate } from 'react-router-dom';
 
-const pages = ['Productos',];
+const pages = ['Productos'];
 const settings = ['Perfil', 'Logout'];
 
-export default function NavBar() {
+export default function NavBar({ categoriesMenu }) {
+    const navigate = useNavigate();
+
+    const [anchorProd, setAnchorProd] = useState(null);
     const [anchorElNav, setAnchorElNav] = useState(null);
     const [anchorElUser, setAnchorElUser] = useState(null);
 
@@ -35,6 +39,14 @@ export default function NavBar() {
     const handleCloseUserMenu = () => {
         setAnchorElUser(null);
     };
+
+    const hanleOpenProductMenu = (event) => {
+        setAnchorProd(event.currentTarget);
+    }
+
+    const hanleCloseProductMenu = (event) => {
+        setAnchorProd(null);
+    }
 
     return (
         <AppBar position="static">
@@ -98,6 +110,7 @@ export default function NavBar() {
                             </MenuItem>
                         </Menu>
                     </Box>
+
                     <AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
                     <Typography
                         variant="h5"
@@ -118,24 +131,42 @@ export default function NavBar() {
                         MyTech
                     </Typography>
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                        {pages.map((page) => (
-                            <Button
-                                key={page}
-                                onClick={handleCloseNavMenu}
-                                sx={{ my: 2, color: 'white', display: 'block' }}
-                            >
-                                {page}
-                            </Button>
-                        ))}
+                        <Button
+                            onClick={hanleOpenProductMenu}
+                            sx={{ my: 2, color: 'white', display: 'block' }}
+                        >
+                            Productos
+                        </Button>
+                        <Menu
+                            sx={{ mt: '45px' }}
+                            id="menu-appbar"
+                            anchorEl={anchorProd}
+                            anchorOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                            }}
+                            keepMounted
+                            transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                            }}
+                            open={Boolean(anchorProd)}
+                            onClose={hanleCloseProductMenu}
+                        >
+                            {categoriesMenu.map((category) => (
+                                <MenuItem key={category.id} onClick={() => {
+                                    navigate(`/category/${category.id}`);
+                                    hanleCloseProductMenu();
+                                }}>
+                                    <Typography textAlign="center">{category.name}</Typography>
+                                </MenuItem>
+                            ))}
+
+                        </Menu>
                     </Box>
 
                     <Box sx={{ mr: '10px', display: { xs: 'none', md: 'flex'}, justifyContent: 'end' }}>
-                        <Button
-                            sx={{ my: 2, color: 'white', display: 'flex', justifyContent: 'center' }}
-                        >
-                            <ShoppingCartIcon sx={{ mr: 1 }} />
-                            Mi carrito
-                        </Button>
+                        <CartWidget itemCount={3} />
                     </Box>
                     <Box sx={{ flexGrow: 0 }}>
                         <Tooltip title="Open settings">
