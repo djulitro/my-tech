@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Backdrop, CircularProgress, Grid } from '@mui/material';
 import CardProductos from './CardProductos';
 import { useParams } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase/firebaseConfig';
 
 export default function ItemListContainer({ categories }) {
 
@@ -20,23 +21,25 @@ export default function ItemListContainer({ categories }) {
 
   const requestGetProducts = async () => {
     setIsLoading(true);
-    const url = 'https://fakestoreapi.com/products';
-    const response = await axios.get(url);
+    const q = query(collection(db, "products"));
+    const response = await getDocs(q);
 
-    setProducts(response.data);
+    const productsResponse = response.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    setProducts(productsResponse);
     setIsLoading(false);
   }
 
   const requestGetProductsByCategory = async (idCategorie) => {
     setIsLoading(true);
     setProducts([]);
-    const category = categories.find((category) => category.id === parseInt(idCategorie, 10));
 
-    const url = `https://fakestoreapi.com/products/category/${category.name}`;
-    const response = await axios.get(url);
+    const q = query(collection(db, "products"), where("product_type_id", "==", idCategorie));
+    const response = await getDocs(q);
 
-    console.log(response);
-    setProducts(response.data);
+    const responseProducts = response.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    setProducts(responseProducts);
     setIsLoading(false);
   }
 
@@ -45,7 +48,7 @@ export default function ItemListContainer({ categories }) {
       {
         products.map((product, index) => (
           <Grid item xs={12} md={4} xl={3} sx={{ mt: 5}} display={'flex'} justifyContent={'center'} key={index}>
-            <CardProductos img={product.image} title={product.title} description={product.description} id={product.id} price={product.price}/>
+            <CardProductos img={product.img} title={product.name} description={product.description} id={product.id} price={product.price} stock={product.stock}/>
           </Grid>
         ))
       }

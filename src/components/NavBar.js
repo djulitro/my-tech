@@ -14,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import CartWidget from './CartWidget';
 import { useNavigate } from 'react-router-dom';
+import { Stack } from '@mui/material';
 
 const pages = ['Productos'];
 const settings = ['Perfil', 'Logout'];
@@ -38,6 +39,7 @@ export default function NavBar({ categoriesMenu }) {
 
     const handleCloseUserMenu = () => {
         setAnchorElUser(null);
+        navigate('/search/buy');
     };
 
     const hanleOpenProductMenu = (event) => {
@@ -52,24 +54,24 @@ export default function NavBar({ categoriesMenu }) {
         <AppBar position="static">
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="a"
-                        href="/"
-                        sx={{
-                            mr: 2,
-                            display: { xs: 'none', md: 'flex' },
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            letterSpacing: '.3rem',
-                            color: 'inherit',
-                            textDecoration: 'none',
-                        }}
-                    >
-                        MyTech
-                    </Typography>
+                    <Stack onClick={() => navigate('/')} display={'flex'} flexDirection={'row'} sx={{ cursor: 'pointer', }}>
+                        <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+                        <Typography
+                            variant="h6"
+                            noWrap
+                            sx={{
+                                mr: 2,
+                                display: { xs: 'none', md: 'flex' },
+                                fontFamily: 'monospace',
+                                fontWeight: 700,
+                                letterSpacing: '.3rem',
+                                color: 'inherit',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            MyTech
+                        </Typography>
+                    </Stack>
 
                     <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
                         <IconButton
@@ -166,7 +168,7 @@ export default function NavBar({ categoriesMenu }) {
                     </Box>
 
                     <Box sx={{ mr: '10px', display: { xs: 'none', md: 'flex'}, justifyContent: 'end' }}>
-                        <CartWidget itemCount={3} />
+                        <CartWidget />
                     </Box>
                     <Box sx={{ flexGrow: 0 }}>
                         <Tooltip title="Open settings">
@@ -190,11 +192,9 @@ export default function NavBar({ categoriesMenu }) {
                             open={Boolean(anchorElUser)}
                             onClose={handleCloseUserMenu}
                         >
-                            {settings.map((setting) => (
-                                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                                    <Typography textAlign="center">{setting}</Typography>
-                                </MenuItem>
-                            ))}
+                            <MenuItem onClick={handleCloseUserMenu}>
+                                <Typography textAlign="center">Buscar compras</Typography>
+                            </MenuItem>
                         </Menu>
                     </Box>
                 </Toolbar>

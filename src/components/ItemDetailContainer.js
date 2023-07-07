@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { useContext, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Backdrop, Button, Card, CircularProgress, Container, Grid, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CardProductos from './CardProductos';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase/firebaseConfig';
+import { CartContext } from '../context/CartContext';
+import ModalViewCart from './ModalViewCart';
 
 export default function ItemDetailContainer() {
-
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { addItemToCart } = useContext(CartContext);
 
+    const [openModal, setOpenModal] = useState(false);
     const [product, setProduct] = useState([]);
     const [cantProduct, setCantProduct] = useState(0);
     const [similarProduct, setSimilarProduct] = useState([]);
@@ -20,30 +25,46 @@ export default function ItemDetailContainer() {
     }, [id]);
 
     useEffect(() => {
-        if (product.category) {
-            requestGetProductsByCategory(product.category);
+        if (product.product_type_id) {
+            requestGetProductsByCategory(product.product_type_id);
         }
         // eslint-disable-next-line
     }, [product]);
 
     const requestGetProductById = async (id) => {
         setIsLoading(true);
-        const url = `https://fakestoreapi.com/products/${id}`;
-        const response = await axios.get(url);
+        const docRef = doc(db, "products", id);
+        const response = await getDoc(docRef);
 
-        console.log(response);
-        setProduct(response.data);
+        const productResponse = { id: response.id, ...response.data() }
+        setProduct(productResponse);
         setIsLoading(false);
     }
 
-    
-    const requestGetProductsByCategory = async (nameCategorie) => {
-        const url = `https://fakestoreapi.com/products/category/${nameCategorie}`;
-        const response = await axios.get(url);
+    const requestGetProductsByCategory = async (categoryId) => {
+        const q = query(collection(db, "products"), where("product_type_id", "==", categoryId));
+        const response = await getDocs(q);
 
-        const similar = response.data.filter((el) => el.id !== product.id);
+        const productsResponse = response.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-        setSimilarProduct(similar);
+        setSimilarProduct(productsResponse.filter((product) => product.id !== id));
+    }
+
+    const handleAddToCart = (product, cantProduct) => {
+        setIsLoading(true);
+        const objectItem = {
+            ...product,
+            quantity: cantProduct,
+        };
+
+        addItemToCart(objectItem);
+        setIsLoading(false);
+        setOpenModal(true);
+    }
+
+    const handleOpenViewCart = () => {
+        setOpenModal(false);
+        navigate('/cart');
     }
 
     return (
@@ -58,7 +79,7 @@ export default function ItemDetailContainer() {
                                 m: 5,
                                 maxHeight: '345px',
                             }}>
-                            <img src={product.image} alt={product.title} style={{
+                            <img src={product.img} alt={product.name} style={{
                                 maxWidth: '345px',
                                 maxHeight: '345px',
                             }} />
@@ -68,7 +89,7 @@ export default function ItemDetailContainer() {
                         <Grid container display={'flex'} justifyContent={'center'} p={5}>
                             <Grid item xs={12} md={12} display={'flex'} justifyContent={'center'} mt={5}>
                                 <Typography variant={'h4'}>
-                                    {product.title}
+                                    {product.name}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12} md={12} display={'flex'} justifyContent={'center'}>
@@ -83,6 +104,11 @@ export default function ItemDetailContainer() {
                             </Grid>
                             <Grid item xs={12} md={12} display={'flex'} justifyContent={'end'}>
                                 <Typography variant={'body'}>
+                                    { product.stock === 0 ? 'Sin Stock' : `Stock: ${product.stock}`}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} md={12} display={'flex'} justifyContent={'end'}>
+                                <Typography variant={'body'}>
                                     Total: ${product.price * cantProduct}
                                 </Typography>
                             </Grid>
@@ -90,7 +116,7 @@ export default function ItemDetailContainer() {
                                 <Button
                                     variant="contained"
                                     onClick={() => setCantProduct(cantProduct - 1)}
-                                    disabled={cantProduct === 0}
+                                    disabled={cantProduct === 0 || product.stock === 0}
                                     sx={{
                                         maxHeight: '40px',
                                         mr: 2,
@@ -106,14 +132,19 @@ export default function ItemDetailContainer() {
                                         maxHeight: '40px',
                                         ml: 2,
                                     }}
+                                    disabled={product.stock === 0}
                                 >
                                     <AddCircleOutlineIcon />
                                 </Button>
-                                <Button variant="contained" sx={{
-                                    maxHeight: '40px',
-                                    ml: 2,
-                                }}>
-                                    Agregar al carrito
+                                <Button variant="contained"
+                                    onClick={() => handleAddToCart(product, cantProduct)}
+                                    sx={{
+                                        maxHeight: '40px',
+                                        ml: 2,
+                                    }}
+                                    disabled={cantProduct === 0 || product.stock === 0}
+                                >
+                                    { product.stock === 0 ? 'Producto agotado' : 'Agregar al carrito'}
                                 </Button>
                             </Grid>
                         </Grid>
@@ -126,7 +157,7 @@ export default function ItemDetailContainer() {
                         {
                             similarProduct.map((product, index) => (
                                 <Grid item xs={12} md={4} xl={3} sx={{ mt: 5}} display={'flex'} justifyContent={'center'} key={index}>
-                                    <CardProductos img={product.image} title={product.title} description={product.description} id={product.id} price={product.price}/>
+                                    <CardProductos img={product.img} title={product.name} description={product.description} id={product.id} price={product.price} stock={product.stock}/>
                                 </Grid>
                             ))
                         }
@@ -139,6 +170,12 @@ export default function ItemDetailContainer() {
             >
                 <CircularProgress color="inherit" />
             </Backdrop>
+
+            <ModalViewCart
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                onViewCart={handleOpenViewCart}
+            />
         </Container>
     );
 }

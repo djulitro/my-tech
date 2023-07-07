@@ -6,8 +6,9 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import { CardActionArea, Grid } from '@mui/material';
 
-export default function CardProductos({ img, title, id, price }) {
+export default function CardProductos({ img, title, id, price, stock }) {
   const navigate = useNavigate();
+
   return (
     <Card sx={{ maxWidth: 345, minWidth: 345 }}
       onClick={() => navigate(`/item/${id}`)}
@@ -30,6 +31,11 @@ export default function CardProductos({ img, title, id, price }) {
             <Grid item xs={12} md={12} display={'flex'} justifyContent={'end'} alignItems={'end'}>
               <Typography variant="body2" color="text.secondary">
                 $ {price}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={12} display={'flex'} justifyContent={'end'} alignItems={'end'}>
+              <Typography variant="body2" color="text.secondary">
+                {stock === 0 ? 'Sin stock' : `Stock: ${stock}`}
               </Typography>
             </Grid>
           </Grid>
