@@ -26,6 +26,7 @@ export default function ItemDetailContainer() {
 
     useEffect(() => {
         if (product.product_type_id) {
+            setCantProduct(0);
             requestGetProductsByCategory(product.product_type_id);
         }
         // eslint-disable-next-line
